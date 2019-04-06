@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser, PermissionsMixin
 )
+from taggit.managers import TaggableManager
 
 
 class UserManager(BaseUserManager):
@@ -39,8 +40,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=100, blank=True, null=True)
 
     # 用户简介
-    profile_photo = models.ImageField(upload_to='pic_folder/%Y/%M/%D', default='pic_folder/default.jpg')
+    profile_photo = models.ImageField(upload_to='pic_folder/%Y%m%d', default='pic_folder/default.jpg')
     profile = models.TextField(null=True, blank=True)
+    skills = TaggableManager()
 
     # 用户角色
     is_owner = models.BooleanField('project_owner status', default=False)
@@ -59,3 +61,13 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email', 'first_name', 'last_name']  # createsuperuser 创建admin时的字段
+
+    @property
+    def income(self):
+        completed_jobs = [job_proposal.job for job_proposal in self.job_proposal.all() if job_proposal.job.status == 'ended']
+        income = 0
+        for job in completed_jobs:
+            income += job.price
+
+        return income
+
